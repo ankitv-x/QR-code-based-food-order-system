@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>FoodieExpress | Mobile Menu</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, 'Segoe UI', 'Helvetica Neue', sans-serif;
+        }
+
+        body {
+            background: #f5f2e8;
+            min-height: 100vh;
+        }
+
+        /* MENU SECTION (Mobile-First, card style) */
+        .menu-dashboard {
+            background: #fff4ea;
+            padding: 18px 16px 30px;
+            border-bottom-left-radius: 28px;
+            border-bottom-right-radius: 28px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            max-width: 600px;
+            margin: 0 auto;
+            min-height: 100vh;
+        }
+
+        .menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            margin-bottom: 22px;
+        }
+        .menu-header h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #d64b2c, #f09a3c);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .cart-badge {
+            background: #ffefe3;
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-weight: bold;
+            color: #c2410c;
+            border: 1px solid #ffd3b5;
+        }
+
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 16px;
+            margin: 20px 0 28px;
+        }
+        .food-card {
+            background: white;
+            border-radius: 28px;
+            padding: 12px 10px;
+            text-align: center;
+            box-shadow: 0 5px 12px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+            border: 1px solid #ffdec2;
+            cursor: pointer;
+        }
+        .food-card.selected {
+            background: #fff1e6;
+            border: 2px solid #ff7b2c;
+            box-shadow: 0 6px 14px rgba(255, 123, 44, 0.2);
+        }
+        .food-emoji {
+            font-size: 2.8rem;
+            display: block;
+            margin-bottom: 6px;
+        }
+        .food-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin: 6px 0 4px;
+        }
+        .food-price {
+            font-weight: 600;
+            color: #c2410c;
+            font-size: 1rem;
+            margin: 4px 0;
+        }
+        .select-icon {
+            font-size: 1.2rem;
+            margin-top: 5px;
+            color: #ff7b2c;
+        }
+        .order-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+        .btn {
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            border-radius: 40px;
+            transition: 0.2s;
+            background: #ff7b2c;
+            color: white;
+            padding: 12px 20px;
+            font-size: 1rem;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        .btn:active { transform: scale(0.97); background: #e65c1a; }
+        .btn-secondary {
+            background: #2c3e66;
+        }
+        .btn-secondary:active { background: #1f2c48; }
+        .toast-msg {
+            background: #2c2c2c;
+            color: #ffd89a;
+            padding: 10px;
+            border-radius: 40px;
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.85rem;
+            opacity: 0;
+            transition: 0.2s;
+        }
+        .network-info {
+            font-size: 11px;
+            text-align: center;
+            margin-top: 20px;
+            color: #b4896b;
+            background: #fff1e6;
+            padding: 8px;
+            border-radius: 30px;
+        }
+
+        @media (max-width: 600px) {
+            .items-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+            .btn { padding: 10px 16px; }
+        }
+    </style>
+</head>
+<body>
+<div class="menu-dashboard" id="menuDashboard">
+    <div class="menu-header">
+        <h1>🍽️ FEAST MENU</h1>
+        <div class="cart-badge" id="cartCountBadge">0 selected</div>
+    </div>
+    <div class="items-grid" id="itemsGrid"></div>
+    <div class="order-actions">
+        <button class="btn" id="confirmOrderBtn">✨ CONFIRM ORDER ✨</button>
+        <button class="btn btn-secondary" id="clearSelectionBtn">🗑️ Deselect All</button>
+    </div>
+    <div id="menuToast" class="toast-msg"></div>
+    <div style="font-size: 12px; text-align: center; margin-top: 12px; color: #aa7a5c;">Tap items to select/deselect</div>
+    <div class="network-info">🔗 Connected to Chef Dashboard (same network) · Orders appear instantly on chef screen</div>
+</div>
+
+<script>
+    // ======================== MENU DATABASE ==========================
+    const FULL_MENU = [
+        { id: "pizza", name: "Pizza", price: "₹249", emoji: "🍕" },
+        { id: "burger", name: "Burger", price: "₹99", emoji: "🍔" },
+        { id: "dabeli", name: "Dabeli", price: "₹45", emoji: "🥪" },
+        { id: "vadapau", name: "Vada Pau", price: "₹35", emoji: "🥖" },
+        { id: "noodles", name: "Noodles", price: "₹129", emoji: "🍜" },
+        { id: "maggie", name: "Maggie", price: "₹59", emoji: "🍲" },
+        { id: "manchurian", name: "Manchurian", price: "₹149", emoji: "🥘" },
+        { id: "paf", name: "Pav Bhaji", price: "₹109", emoji: "🍛" },
+        { id: "sandwich", name: "Sandwich", price: "₹89", emoji: "🥪" },
+        { id: "dosa", name: "Dosa", price: "₹79", emoji: "🥞" },
+        { id: "idali", name: "Idli", price: "₹49", emoji: "🍚" }
+    ];
+
+    // state for selected items
+    let selectedItemsMap = new Map();
+
+    function renderMenuUI() {
+        const grid = document.getElementById('itemsGrid');
+        if (!grid) return;
+        grid.innerHTML = '';
+        FULL_MENU.forEach(item => {
+            const isSelected = selectedItemsMap.has(item.id);
+            const card = document.createElement('div');
+            card.className = `food-card ${isSelected ? 'selected' : ''}`;
+            card.setAttribute('data-id', item.id);
+            card.innerHTML = `
+                <span class="food-emoji">${item.emoji}</span>
+                <div class="food-name">${item.name}</div>
+                <div class="food-price">${item.price}</div>
+                <div class="select-icon">${isSelected ? '✓ SELECTED' : '⚪ TAP'}</div>
+            `;
+            card.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleItemSelection(item);
+            });
+            grid.appendChild(card);
+        });
+        updateCartBadge();
+    }
+
+    function toggleItemSelection(item) {
+        if (selectedItemsMap.has(item.id)) {
+            selectedItemsMap.delete(item.id);
+            showToast(`❌ Removed ${item.name}`, 1200);
+        } else {
+            selectedItemsMap.set(item.id, { ...item, quantity: 1 });
+            showToast(`✅ Added ${item.name}`, 1000);
+        }
+        renderMenuUI();
+    }
+
+    function clearAllSelections() {
+        if (selectedItemsMap.size === 0) {
+            showToast("No items to deselect", 1000);
+            return;
+        }
+        selectedItemsMap.clear();
+        renderMenuUI();
+        showToast("🗑️ All items deselected", 1200);
+    }
+
+    function updateCartBadge() {
+        const badge = document.getElementById('cartCountBadge');
+        if (badge) {
+            const count = selectedItemsMap.size;
+            badge.innerText = count === 0 ? "0 selected" : `${count} item${count > 1 ? 's' : ''} selected`;
+        }
+    }
+
+    function showToast(msg, duration = 1800) {
+        const toastDiv = document.getElementById('menuToast');
+        if (!toastDiv) return;
+        toastDiv.innerText = msg;
+        toastDiv.style.opacity = '1';
+        setTimeout(() => {
+            toastDiv.style.opacity = '0';
+        }, duration);
+    }
+
+    // ==================== ORDER STORAGE & SYNC ====================
+    // Save order to localStorage (shared across pages on same network)
+    function addNewOrder(selectedItemsArray) {
+        if (!selectedItemsArray.length) {
+            showToast("⚠️ Please select at least one item before ordering!", 2000);
+            return false;
+        }
+        
+        const orderId = 'ORD-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+        const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute:'2-digit', second:'2-digit' });
+        
+        const order = {
+            id: orderId,
+            time: timestamp,
+            fullTime: new Date().toISOString(),
+            items: selectedItemsArray.map(it => ({ name: it.name, price: it.price, qty: 1 })),
+            summary: selectedItemsArray.map(it => `${it.name} (${it.price})`).join(', '),
+            status: 'pending'
+        };
+        
+        // Get existing orders from localStorage
+        let existingOrders = [];
+        const stored = localStorage.getItem('kitchen_orders');
+        if (stored) {
+            try {
+                existingOrders = JSON.parse(stored);
+                if (!Array.isArray(existingOrders)) existingOrders = [];
+            } catch(e) { existingOrders = []; }
+        }
+        
+        // Add new order at the beginning
+        existingOrders.unshift(order);
+        localStorage.setItem('kitchen_orders', JSON.stringify(existingOrders));
+        
+        // Trigger storage event manually for same-page (though other tab will catch via storage event)
+        window.dispatchEvent(new Event('storage'));
+        
+        showToast(`📢 Order placed! ${selectedItemsArray.length} item(s) sent to chef.`, 2000);
+        
+        // Clear selection after successful order
+        selectedItemsMap.clear();
+        renderMenuUI();
+        return true;
+    }
+
+    function confirmOrderHandler() {
+        const selectedItems = Array.from(selectedItemsMap.values());
+        if (selectedItems.length === 0) {
+            showToast("❗ No items selected. Please tap on items to add to order.", 1800);
+            return;
+        }
+        addNewOrder(selectedItems);
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+        renderMenuUI();
+        const confirmBtn = document.getElementById('confirmOrderBtn');
+        const clearBtn = document.getElementById('clearSelectionBtn');
+        if (confirmBtn) confirmBtn.addEventListener('click', confirmOrderHandler);
+        if (clearBtn) clearBtn.addEventListener('click', clearAllSelections);
+        
+        setTimeout(() => {
+            showToast("🍟 Welcome! Tap items & confirm order. Chef sees instantly!", 3500);
+        }, 600);
+    });
+</script>
+</body>
+</html>
