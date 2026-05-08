@@ -163,8 +163,31 @@
         const container = document.getElementById('ordersContainer');
         const pending = orders.filter(o => !o.completed);
         
+        // document.getElementById('pendingCount').innerText = pending.length;
+        // document.getElementById('totalCount').innerText = orders.length;
+
+        // change here 
+
         document.getElementById('pendingCount').innerText = pending.length;
-        document.getElementById('totalCount').innerText = orders.length;
+
+// Keep total count increasing only
+let totalOrders = localStorage.getItem('total_orders_count');
+
+if (!totalOrders) {
+    totalOrders = orders.length;
+} else {
+    totalOrders = parseInt(totalOrders);
+
+    // Increase only when new pending orders are added
+    if (orders.length > totalOrders) {
+        totalOrders = orders.length;
+    }
+}
+
+localStorage.setItem('total_orders_count', totalOrders);
+document.getElementById('totalCount').innerText = totalOrders;
+
+        //to here
         
         if (pending.length === 0) {
             container.innerHTML = '<div class="empty-orders">✨ No pending orders. Kitchen ready! ✨</div>';
